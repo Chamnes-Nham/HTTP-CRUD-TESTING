@@ -1,0 +1,43 @@
+name: CI-for-pullrequest
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20' # Use the appropriate Node.js version for your project
+
+      - name: Install dependencies
+        run: yarn install
+
+      - name: Build project
+        run: yarn build
+
+      - name: Run tests
+        run: yarn test
+
+      - name: Auto-merge on success
+        if: success()
+        uses: pascalgn/automerge-action@v0.15.5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          mergeMethod: squash
+          commitMessage: "Automatically merged PR #${{ github.event.pull_request.number }}: ${{ github.event.pull_request.title }}"
+          branch: main
+          requiredCondition: |
+            - status-success
+            - review-approval
+          mergeCommitMessage: >
+            Merged pull request #${{ github.event.pull_request.number }}: ${{ github.event.pull_request.title }}
